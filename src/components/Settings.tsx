@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { TestStorage } from './TestStorage';
 
 interface SettingsProps {
   onWebhookChange: (url: string) => void;
@@ -146,6 +147,9 @@ export const Settings = ({ onWebhookChange }: SettingsProps) => {
                 ✅ Currently configured: <code style={{ color: '#0ea5e9' }}>{webhookUrl}</code>
               </div>
             )}
+
+            {/* Test Storage */}
+            <TestStorage />
 
             <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
               {webhookUrl && (
