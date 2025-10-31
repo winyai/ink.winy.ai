@@ -1,6 +1,7 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
+import { getStorage, ref, uploadString, getDownloadURL } from "firebase/storage";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -16,5 +17,33 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const analytics = getAnalytics(app);
+const storage = getStorage(app);
 
-export { app, analytics };
+export { app, analytics, storage };
+
+// Upload image to Firebase Storage
+export async function uploadImage(dataUrl: string, path: string): Promise<string> {
+  const storageRef = ref(storage, path);
+  await uploadString(storageRef, dataUrl, 'data_url');
+  const downloadUrl = await getDownloadURL(storageRef);
+  return downloadUrl;
+}
+
+// Send note to webhook
+export async function sendToWebhook(webhookUrl: string, payload: any): Promise<void> {
+  if (!webhookUrl) {
+    throw new Error('No webhook URL configured');
+  }
+
+  const response = await fetch(webhookUrl, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Webhook failed: ${response.statusText}`);
+  }
+}

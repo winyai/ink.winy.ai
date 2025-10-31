@@ -3,6 +3,9 @@ import { InkCanvas } from './components/InkCanvas';
 import { Toolbar } from './components/Toolbar';
 import { PhotoStack } from './components/PhotoStack';
 import { SwipeAnimation } from './components/SwipeAnimation';
+import { SendButton } from './components/SendButton';
+import { Settings } from './components/Settings';
+import { uploadImage, sendToWebhook } from './firebase';
 import './App.css';
 
 interface Photo {
@@ -15,17 +18,68 @@ function App() {
   const [isErasing, setIsErasing] = useState(false);
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [showSwipeAnimation, setShowSwipeAnimation] = useState(false);
+  const [webhookUrl, setWebhookUrl] = useState('');
+  const [isSending, setIsSending] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleSwipeUp = () => {
-    console.log('Swiped up! Sending note...');
+  const handleSwipeUp = async () => {
+    if (isSending) return;
+    setIsSending(true);
     setShowSwipeAnimation(true);
 
-    // TODO: In production, this would:
-    // 1. Export canvas as image
-    // 2. Send to backend for OCR/processing
-    // 3. Upload photos
-    // 4. Create Notion page
+    try {
+      // Get canvas element from InkCanvas component
+      const canvas = document.querySelector('canvas') as HTMLCanvasElement;
+      if (!canvas) {
+        console.error('Canvas not found');
+        return;
+      }
+
+      // Export canvas as data URL
+      const canvasDataUrl = canvas.toDataURL('image/png');
+
+      // Upload canvas image to Firebase Storage
+      const timestamp = Date.now();
+      const canvasImageUrl = await uploadImage(
+        canvasDataUrl,
+        `notes/${timestamp}/canvas.png`
+      );
+
+      // Upload all photos to Firebase Storage
+      const photoUrls = await Promise.all(
+        photos.map(async (photo, index) => {
+          const photoUrl = await uploadImage(
+            photo.url,
+            `notes/${timestamp}/photo-${index}.png`
+          );
+          return photoUrl;
+        })
+      );
+
+      // Prepare payload
+      const payload = {
+        timestamp,
+        canvasImage: canvasImageUrl,
+        photos: photoUrls,
+        metadata: {
+          color: currentColor,
+          photoCount: photos.length,
+        },
+      };
+
+      // Send to webhook if configured
+      if (webhookUrl) {
+        await sendToWebhook(webhookUrl, payload);
+        console.log('Successfully sent to webhook:', payload);
+      } else {
+        console.log('No webhook configured. Payload:', payload);
+      }
+    } catch (error) {
+      console.error('Error sending note:', error);
+      alert('Failed to send note. Check console for details.');
+    } finally {
+      setIsSending(false);
+    }
   };
 
   const handleCameraClick = () => {
@@ -82,13 +136,18 @@ function App() {
     >
       {/* Canvas */}
       <InkCanvas
-        onSwipeUp={handleSwipeUp}
         currentColor={currentColor}
         isErasing={isErasing}
       />
 
       {/* Photo Stack */}
       <PhotoStack photos={photos} onPhotoRemove={handlePhotoRemove} />
+
+      {/* Settings */}
+      <Settings onWebhookChange={setWebhookUrl} />
+
+      {/* Send Button */}
+      <SendButton onSend={handleSwipeUp} />
 
       {/* Toolbar */}
       <Toolbar
@@ -134,9 +193,11 @@ function App() {
       >
         <strong>Ink.winy.ai</strong>
         <br />
-        Draw with finger/stylus
+        ✏️ Draw with finger/stylus
         <br />
-        Swipe up fast to send 🚀
+        🔍 Pinch to zoom, 2 fingers to pan
+        <br />
+        🚀 Drag send button up to send
       </div>
     </div>
   );
