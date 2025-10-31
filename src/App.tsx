@@ -24,6 +24,11 @@ function App() {
 
   const handleSwipeUp = async () => {
     if (isSending) return;
+
+    console.log('🚀 Starting send process...');
+    console.log('Webhook URL configured:', webhookUrl || 'NOT CONFIGURED');
+    console.log('Photos count:', photos.length);
+
     setIsSending(true);
     setShowSwipeAnimation(true);
 
@@ -31,27 +36,42 @@ function App() {
       // Get canvas element from InkCanvas component
       const canvas = document.querySelector('canvas') as HTMLCanvasElement;
       if (!canvas) {
-        console.error('Canvas not found');
+        console.error('❌ Canvas not found in DOM');
+        alert('Canvas not found. Please try again.');
         return;
       }
 
+      console.log('✅ Canvas found:', canvas.width, 'x', canvas.height);
+
       // Export canvas as data URL
       const canvasDataUrl = canvas.toDataURL('image/png');
+      console.log('✅ Canvas exported to data URL, length:', canvasDataUrl.length);
+
+      // Check if canvas is blank
+      if (canvasDataUrl.length < 10000) {
+        console.warn('⚠️ Canvas might be blank (data URL is very small)');
+      }
 
       // Upload canvas image to Firebase Storage
       const timestamp = Date.now();
+      console.log('📤 Uploading canvas to Firebase Storage...');
+
       const canvasImageUrl = await uploadImage(
         canvasDataUrl,
         `notes/${timestamp}/canvas.png`
       );
+      console.log('✅ Canvas uploaded to:', canvasImageUrl);
 
       // Upload all photos to Firebase Storage
+      console.log('📤 Uploading', photos.length, 'photos to Firebase Storage...');
       const photoUrls = await Promise.all(
         photos.map(async (photo, index) => {
+          console.log(`  Uploading photo ${index + 1}/${photos.length}...`);
           const photoUrl = await uploadImage(
             photo.url,
             `notes/${timestamp}/photo-${index}.png`
           );
+          console.log(`  ✅ Photo ${index + 1} uploaded:`, photoUrl);
           return photoUrl;
         })
       );
@@ -67,16 +87,27 @@ function App() {
         },
       };
 
+      console.log('📦 Payload prepared:', JSON.stringify(payload, null, 2));
+
       // Send to webhook if configured
       if (webhookUrl) {
+        console.log('📤 Sending to webhook:', webhookUrl);
         await sendToWebhook(webhookUrl, payload);
-        console.log('Successfully sent to webhook:', payload);
+        console.log('✅ Successfully sent to webhook!');
+        alert('Note sent successfully! 🎉');
       } else {
-        console.log('No webhook configured. Payload:', payload);
+        console.warn('⚠️ No webhook configured. Payload prepared but not sent.');
+        alert('No webhook configured. Check Settings to add a webhook URL.');
       }
     } catch (error) {
-      console.error('Error sending note:', error);
-      alert('Failed to send note. Check console for details.');
+      console.error('❌ Error sending note:', error);
+      if (error instanceof Error) {
+        console.error('Error message:', error.message);
+        console.error('Error stack:', error.stack);
+        alert(`Failed to send note: ${error.message}\n\nCheck console for details.`);
+      } else {
+        alert('Failed to send note. Check console for details.');
+      }
     } finally {
       setIsSending(false);
     }

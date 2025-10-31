@@ -35,15 +35,31 @@ export async function sendToWebhook(webhookUrl: string, payload: any): Promise<v
     throw new Error('No webhook URL configured');
   }
 
-  const response = await fetch(webhookUrl, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(payload),
-  });
+  console.log('🌐 Making POST request to webhook...');
+  console.log('URL:', webhookUrl);
+  console.log('Payload size:', JSON.stringify(payload).length, 'bytes');
 
-  if (!response.ok) {
-    throw new Error(`Webhook failed: ${response.statusText}`);
+  try {
+    const response = await fetch(webhookUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+
+    console.log('📥 Response status:', response.status, response.statusText);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('❌ Webhook error response:', errorText);
+      throw new Error(`Webhook failed with status ${response.status}: ${response.statusText}`);
+    }
+
+    const responseData = await response.text();
+    console.log('✅ Webhook response:', responseData);
+  } catch (error) {
+    console.error('❌ Fetch error:', error);
+    throw error;
   }
 }
