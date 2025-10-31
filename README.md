@@ -47,42 +47,47 @@ Open [http://localhost:5173](http://localhost:5173) in your browser.
 
 ## Firebase Deployment
 
-### Initial Setup
+### Automatic Deployment via GitHub Actions
 
-1. Install Firebase CLI:
-```bash
-npm install -g firebase-tools
-```
+The project is configured for automatic deployment to Firebase Hosting when you push to `main` or `master` branch.
 
-2. Login to Firebase:
+**Setup (one-time):**
+
+1. Create a Firebase service account:
 ```bash
 firebase login
+firebase projects:list
+firebase init hosting:github
 ```
 
-3. Create a new Firebase project at [console.firebase.google.com](https://console.firebase.google.com)
+Or manually:
+- Go to [Firebase Console](https://console.firebase.google.com/project/ink-winy-ai/settings/serviceaccounts)
+- Generate a new private key
+- Copy the JSON content
 
-4. Update `.firebaserc` with your project ID:
-```json
-{
-  "projects": {
-    "default": "your-project-id-here"
-  }
-}
+2. Add GitHub Secret:
+- Go to your GitHub repo → Settings → Secrets → Actions
+- Click "New repository secret"
+- Name: `FIREBASE_SERVICE_ACCOUNT`
+- Value: Paste the entire service account JSON
+
+3. Push to trigger deployment:
+```bash
+git push origin main
 ```
 
-### Deploy
+Your app will automatically deploy to: **https://ink-winy-ai.web.app**
 
-Build and deploy to Firebase Hosting:
+### Manual Deployment (Alternative)
+
+If you prefer to deploy manually:
 
 ```bash
-# Build the production app
+npm install -g firebase-tools
+firebase login
 npm run build
-
-# Deploy to Firebase
 firebase deploy --only hosting
 ```
-
-Your app will be live at: `https://your-project-id.web.app`
 
 ### Custom Domain (Optional)
 
