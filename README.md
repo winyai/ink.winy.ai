@@ -4,6 +4,26 @@
 
 A zero-friction input surface designed for iPad (also usable on web) that lets you handwrite with Apple Pencil, snap photos, and send everything to your system with a simple swipe gesture.
 
+## 🚀 Quick Deploy (2 minutes)
+
+Ready to deploy? Run these commands:
+
+```bash
+# Mac/Linux
+./setup-firebase.sh
+
+# Or manually
+npm install -g firebase-tools
+firebase login
+npm run deploy
+```
+
+**Windows:** Double-click `setup-firebase.bat` or run `npm run deploy`
+
+Your app will be live at: **https://ink-winy-ai.web.app** 🎉
+
+📖 **Detailed instructions:** See [DEPLOYMENT.md](./DEPLOYMENT.md)
+
 ## Features
 
 - ✏️ **Natural Drawing** - Powered by Perfect Freehand for smooth, pressure-sensitive strokes

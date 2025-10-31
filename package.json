@@ -7,7 +7,9 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "deploy": "npm run build && firebase deploy --only hosting --project ink-winy-ai",
+    "deploy:preview": "npm run build && firebase hosting:channel:deploy preview --project ink-winy-ai"
   },
   "dependencies": {
     "firebase": "^12.5.0",
